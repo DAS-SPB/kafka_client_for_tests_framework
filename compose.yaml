@@ -87,15 +87,32 @@ services:
 
   vault:
     image: hashicorp/vault:1.21.4
-    command: [ "server", "-config=/vault/config/vault.hcl" ]
+    command: ["server"]
+    restart: unless-stopped
+
     ports:
       - "127.0.0.1:8200:8200"
     environment:
       VAULT_ADDR: "http://127.0.0.1:8200"
+      SKIP_SETCAP: "true"
+      VAULT_LOCAL_CONFIG: |
+        {
+          "ui": true,
+          "disable_mlock": true,
+          "storage": {
+            "file": {
+              "path": "/vault/file"
+            }
+          },
+          "listener": [{
+            "tcp": {
+              "address": "0.0.0.0:8200",
+              "tls_disable": true
+            }
+          }]
+        }
     volumes:
       - vault-data:/vault/file
-      - ./vault/config/vault.hcl:/vault/config/vault.hcl:ro
-    # No healthcheck here: first startup requires manual init + unseal.
     deploy:
       resources:
         limits:
