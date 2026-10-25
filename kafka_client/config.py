@@ -21,12 +21,23 @@ class KafkaConfig:
             "bootstrap.servers": self.bootstrap_servers,
             "client.id": self.client_id,
             "security.protocol": self.security_protocol,
-            "sasl.mechanism": self.sasl_mechanism,
-            "sasl.username": self.sasl_username,
-            "sasl.password": self.sasl_password,
             "acks": "all",
             "enable.idempotence": True,
             "message.timeout.ms": self.message_timeout_ms,
         }
 
+        if self.security_protocol in ("SASL_PLAINTEXT", "SASL_SSL"):
+            config.update(
+                {
+                    "sasl.mechanism": self.sasl_mechanism,
+                    "sasl.username": self.sasl_username,
+                    "sasl.password": self.sasl_password,
+                }
+            )
+
         return config
+
+
+KAFKA_CONFIG = KafkaConfig(
+    bootstrap_servers="localhost:9092",
+)
