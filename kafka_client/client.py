@@ -26,10 +26,15 @@ class KafkaClient:
 
         encoded_headers = (
             {
-                (name, value.encode("utf-8") if isinstance(value, str) else value)
+                name: (
+                    value.encode("utf-8")
+                    if isinstance(value, str)
+                    else value
+                )
                 for name, value in headers.items()
             }
-            if headers is not None else None
+            if headers is not None
+            else None
         )
 
         return self._producer.send(

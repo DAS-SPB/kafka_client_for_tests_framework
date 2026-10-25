@@ -39,8 +39,12 @@ class KafkaProducerClosedError(KafkaProducerError):
 class KafkaProducer:
     def __init__(self, config: KafkaConfig):
         self._producer = Producer(config.to_producer_config())
+
         self._lock = Lock()
+        self._close_lock = Lock()
+
         self._closed = False
+        self._drained = False
 
     def send(
             self,
@@ -126,16 +130,24 @@ class KafkaProducer:
 
         return result
 
-    def close(self, timeout: float = 10.0):
-        with self._lock:
-            if self._closed:
+    def close(self, timeout: float = 10.0) -> None:
+        with self._close_lock:
+            with self._lock:
+                self._closed = True
+
+            if self._drained:
                 return
 
-            self._closed = True
-            remaining = self._producer.flush(timeout)
+            try:
+                remaining = self._producer.flush(timeout)
+            except KafkaException as exc:
+                raise KafkaProducerError(
+                    "Failed to flush Kafka producer"
+                ) from exc
 
-        if remaining:
-            raise KafkaProducerError(
-                f"Producer closed with "
-                f"{remaining} pending messages"
-            )
+            if remaining:
+                raise KafkaProducerError(
+                    f"Producer has {remaining} pending messages"
+                )
+
+            self._drained = True

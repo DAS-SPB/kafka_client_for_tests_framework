@@ -36,8 +36,3 @@ class KafkaConfig:
             )
 
         return config
-
-
-KAFKA_CONFIG = KafkaConfig(
-    bootstrap_servers="localhost:9092",
-)
